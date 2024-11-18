@@ -7,15 +7,17 @@ import {
   Text,
   Animated,
   Dimensions,
+  GestureResponderEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TAB_WIDTH = SCREEN_WIDTH / 4;
 
 interface CustomTabButtonProps {
-  title: string;
+  titleKey: string; // Changed to titleKey to use translation key
   icon: keyof typeof Feather.glyphMap;
   size: number;
   isSelected?: boolean;
@@ -23,24 +25,25 @@ interface CustomTabButtonProps {
 }
 
 const CustomTabButton: React.FC<CustomTabButtonProps> = ({
-  title,
+  titleKey,
   icon,
   size,
   isSelected = false,
   index,
 }) => {
+  const { t } = useTranslation();
   const scaleValue = useRef(new Animated.Value(1)).current;
   const translateY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.spring(scaleValue, {
-        toValue: isSelected ? 1.1 : 1, // Reduced scale effect
+        toValue: isSelected ? 1.1 : 1,
         friction: 5,
         useNativeDriver: true,
       }),
       Animated.spring(translateY, {
-        toValue: isSelected ? -4 : 0, // Reduced bounce height
+        toValue: isSelected ? -4 : 0,
         friction: 5,
         useNativeDriver: true,
       }),
@@ -65,7 +68,7 @@ const CustomTabButton: React.FC<CustomTabButtonProps> = ({
         >
           <Feather
             name={icon}
-            size={18} // Reduced icon size
+            size={18}
             color={isSelected ? "#FFFFFF" : "#64748B"}
           />
         </View>
@@ -78,7 +81,7 @@ const CustomTabButton: React.FC<CustomTabButtonProps> = ({
             },
           ]}
         >
-          {title}
+          {t(titleKey)} {/* Using translation */}
         </Text>
       </Animated.View>
     </View>
@@ -88,6 +91,27 @@ const CustomTabButton: React.FC<CustomTabButtonProps> = ({
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
+  // Fix for TypeScript error with TouchableOpacity props
+  const createTabBarButton = (
+    props: any,
+    titleKey: string,
+    icon: keyof typeof Feather.glyphMap
+  ) => (
+    <TouchableOpacity
+      {...props}
+      style={{ flex: 1 }}
+      delayLongPress={undefined} // Explicitly set to undefined instead of null
+    >
+      <CustomTabButton
+        titleKey={titleKey}
+        icon={icon}
+        size={18}
+        isSelected={props.accessibilityState?.selected}
+        index={0}
+      />
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Tabs
@@ -95,7 +119,7 @@ export default function TabLayout() {
           tabBarStyle: [
             styles.tabBar,
             {
-              height: 70 + insets.bottom, // Reduced height
+              height: 70 + insets.bottom,
               paddingBottom: insets.bottom,
             },
           ],
@@ -108,68 +132,31 @@ export default function TabLayout() {
           name="index"
           options={{
             title: "Home",
-            tabBarButton: (props) => (
-              <TouchableOpacity {...props} style={{ flex: 1 }}>
-                <CustomTabButton
-                  title="Home"
-                  icon="home"
-                  size={18}
-                  isSelected={props.accessibilityState?.selected}
-                  index={0}
-                />
-              </TouchableOpacity>
-            ),
+            tabBarButton: (props) => createTabBarButton(props, "home", "home"),
           }}
         />
         <Tabs.Screen
           name="myAds"
           options={{
-            title: "My Ads",
-            tabBarButton: (props) => (
-              <TouchableOpacity {...props} style={{ flex: 1 }}>
-                <CustomTabButton
-                  title="My Ads"
-                  icon="shopping-bag"
-                  size={18}
-                  isSelected={props.accessibilityState?.selected}
-                  index={1}
-                />
-              </TouchableOpacity>
-            ),
+            title: "MyAds",
+            tabBarButton: (props) =>
+              createTabBarButton(props, "My Ads", "shopping-bag"),
           }}
         />
         <Tabs.Screen
           name="sell"
           options={{
             title: "Sell",
-            tabBarButton: (props) => (
-              <TouchableOpacity {...props} style={{ flex: 1 }}>
-                <CustomTabButton
-                  title="Sell"
-                  icon="plus-circle"
-                  size={18}
-                  isSelected={props.accessibilityState?.selected}
-                  index={2}
-                />
-              </TouchableOpacity>
-            ),
+            tabBarButton: (props) =>
+              createTabBarButton(props, "Sell", "plus-circle"),
           }}
         />
         <Tabs.Screen
           name="profile"
           options={{
             title: "Account",
-            tabBarButton: (props) => (
-              <TouchableOpacity {...props} style={{ flex: 1 }}>
-                <CustomTabButton
-                  title="Profile"
-                  icon="user"
-                  size={18}
-                  isSelected={props.accessibilityState?.selected}
-                  index={3}
-                />
-              </TouchableOpacity>
-            ),
+            tabBarButton: (props) =>
+              createTabBarButton(props, "profile", "user"),
           }}
         />
       </Tabs>
@@ -193,19 +180,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   tabButtonContainer: {
-    height: 80, // Reduced height
+    height: 80,
     alignItems: "center",
     justifyContent: "center",
   },
   contentContainer: {
     alignItems: "center",
     justifyContent: "center",
-    padding: 4, // Reduced padding
+    padding: 4,
   },
   iconContainer: {
-    width: 38, // Reduced width
-    height: 38, // Reduced height
-    borderRadius: 24, // Adjusted for new size
+    width: 38,
+    height: 38,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F8FAFC",
@@ -214,7 +201,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2563eb",
   },
   tabButtonText: {
-    fontSize: 15, // Reduced font size
-    marginTop: 2, // Reduced margin
+    fontSize: 15,
+    marginTop: 2,
   },
 });

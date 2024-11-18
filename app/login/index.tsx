@@ -18,6 +18,7 @@ import * as SecureStore from "expo-secure-store";
 import { useAppDispatch } from "@/store/hooks";
 import { login } from "@/store/slices/userSlices";
 import { setToken } from "@/store/slices/tokenSlice";
+import { useTranslation } from "react-i18next";
 
 interface Errors {
   email?: string;
@@ -42,6 +43,7 @@ interface LoginResponse {
 }
 
 const Login = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -90,7 +92,6 @@ const Login = () => {
           dispatch(
             login({
               ...userData,
-              isLogin: true,
             })
           );
           dispatch(setToken(response.data.data.token));
@@ -119,8 +120,10 @@ const Login = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back!</Text>
-          <Text style={styles.subtitle}>Sign in to access your account</Text>
+          <Text style={styles.title}>{t("Welcome Back!")}</Text>
+          <Text style={styles.subtitle}>
+            {t("Sign in to access your account")}
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -188,7 +191,9 @@ const Login = () => {
               /* navigation logic for forgot password */
             }}
           >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            <Text style={styles.forgotPasswordText}>
+              {t("Forgot Password?")}
+            </Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -200,7 +205,7 @@ const Login = () => {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
+              <Text style={styles.loginButtonText}>{t("login")}</Text>
             )}
           </TouchableOpacity>
 
@@ -213,10 +218,10 @@ const Login = () => {
 
         {/* Sign Up Section */}
         <View style={styles.signupSection}>
-          <Text style={styles.signupText}>Don't have an account? </Text>
+          <Text style={styles.signupText}>{t("Don't have an account?")} </Text>
           <Link href="/signUp" asChild>
             <TouchableOpacity>
-              <Text style={styles.signupLink}>Sign Up</Text>
+              <Text style={styles.signupLink}>{t("signup")}</Text>
             </TouchableOpacity>
           </Link>
         </View>

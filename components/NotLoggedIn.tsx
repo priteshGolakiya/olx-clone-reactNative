@@ -10,6 +10,7 @@ import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native-gesture-handler";
+import { useTranslation } from "react-i18next";
 
 const { width } = Dimensions.get("window");
 
@@ -20,6 +21,8 @@ type Feature = {
 };
 
 const NotLoggedIn = () => {
+  const { t } = useTranslation();
+
   const features: Feature[] = [
     {
       icon: "cart-outline",
@@ -54,9 +57,11 @@ const NotLoggedIn = () => {
 
         {/* Welcome Text */}
         <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>Welcome to Our Store</Text>
+          <Text style={styles.welcomeTitle}>{t("Welcome to Our Store")}</Text>
           <Text style={styles.welcomeText}>
-            Sign in to access your profile and manage your shopping experience
+            {t(
+              "Sign in to access your profile and manage your shopping experience"
+            )}
           </Text>
         </View>
 
@@ -64,28 +69,32 @@ const NotLoggedIn = () => {
         <View style={styles.buttonContainer}>
           <Link href={"/login"} asChild>
             <TouchableOpacity style={styles.signInButton}>
-              <Text style={styles.signInButtonText}>Sign In</Text>
+              <Text style={styles.signInButtonText}>{t("login")}</Text>
             </TouchableOpacity>
           </Link>
           <Link href={"/signUp"} asChild>
             <TouchableOpacity style={styles.createAccountButton}>
-              <Text style={styles.createAccountButtonText}>Create Account</Text>
+              <Text style={styles.createAccountButtonText}>
+                {t("Create Account")}
+              </Text>
             </TouchableOpacity>
           </Link>
         </View>
 
         {/* Features Section */}
         <View style={styles.featuresSection}>
-          <Text style={styles.featuresTitle}>What you're missing out on</Text>
+          <Text style={styles.featuresTitle}>
+            {t("What you're missing out on")}
+          </Text>
           <View style={styles.featuresGrid}>
             {features.map((feature, index) => (
               <View key={index} style={styles.featureItem}>
                 <View style={styles.featureIconContainer}>
                   <Ionicons name={feature.icon} size={24} color="#007AFF" />
                 </View>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
+                <Text style={styles.featureTitle}>{t(feature.title)}</Text>
                 <Text style={styles.featureDescription}>
-                  {feature.description}
+                  {t(feature.description)}
                 </Text>
               </View>
             ))}
