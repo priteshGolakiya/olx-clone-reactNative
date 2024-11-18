@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  ScrollView,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -94,7 +95,12 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.header}>
         <View style={styles.profileImageContainer}>
           <Image
@@ -122,7 +128,7 @@ const ProfilePage: React.FC = () => {
         addresses={userData?.addresses || []}
         fetchUserData={fetchUserData}
       />
-    </View>
+    </ScrollView>
   );
 };
 

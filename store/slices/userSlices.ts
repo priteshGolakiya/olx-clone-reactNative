@@ -17,6 +17,7 @@ interface UserState {
     _id: string;
     role: string;
     addresses: Address | null;
+
 }
 
 const initialState: UserState = {
