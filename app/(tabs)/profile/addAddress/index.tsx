@@ -161,6 +161,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from "react-native";
 import { router } from "expo-router";
 import { useAppSelector } from "@/store/hooks";
@@ -190,6 +191,7 @@ interface OpenCageComponents {
   state_district?: string;
   country?: string;
   postcode?: string;
+  suburb?: string;
 }
 
 interface OpenCageGeometry {
@@ -221,6 +223,11 @@ const CreateAddress: React.FC = () => {
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const token = useAppSelector((state) => state.token.token);
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    Keyboard.dismiss();
+  };
 
   useEffect(() => {
     (async () => {
@@ -249,10 +256,11 @@ const CreateAddress: React.FC = () => {
     components: OpenCageComponents,
     geometry: OpenCageGeometry
   ): AddressFormData => {
+    console.log("components::: ", components);
     const street =
       components.road !== "unnamed road"
-        ? components.road
-        : components.town || "";
+        ? components.suburb
+        : components.road || "";
 
     return {
       street: street || "",
@@ -385,15 +393,20 @@ const CreateAddress: React.FC = () => {
 
     return (
       <View style={styles.searchResultsContainer}>
-        {searchResults.map((item) => (
-          <TouchableOpacity
-            key={item.formatted}
-            style={styles.searchContainer}
-            onPress={() => handleAddressSelect(item)}
-          >
-            <Text style={styles.searchResultText}>{item.formatted}</Text>
-          </TouchableOpacity>
-        ))}
+        <ScrollView
+          style={styles.searchResultsScroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {searchResults.map((item) => (
+            <TouchableOpacity
+              key={item.formatted}
+              style={styles.searchResult}
+              onPress={() => handleAddressSelect(item)}
+            >
+              <Text style={styles.searchResultText}>{item.formatted}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
     );
   };
@@ -403,7 +416,7 @@ const CreateAddress: React.FC = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
-      <View style={styles.container}>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <TextInput
@@ -418,6 +431,14 @@ const CreateAddress: React.FC = () => {
                 style={styles.searchingIndicator}
                 color="#FF385C"
               />
+            )}
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={clearSearch}
+                style={styles.clearButton}
+              >
+                <MaterialIcons name="close" size={24} color="#ABABAB" />
+              </TouchableOpacity>
             )}
           </View>
 
@@ -487,7 +508,7 @@ const CreateAddress: React.FC = () => {
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -498,8 +519,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   searchContainer: {
-    padding: 16,
+    padding: 10,
     backgroundColor: "#f8f8f8",
+    zIndex: 1,
   },
   searchInputContainer: {
     flexDirection: "row",
@@ -515,6 +537,10 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#fff",
   },
+  clearButton: {
+    padding: 8,
+    marginRight: 4,
+  },
   searchingIndicator: {
     marginRight: 10,
   },
@@ -524,6 +550,9 @@ const styles = StyleSheet.create({
     borderColor: "#ABABAB",
     borderRadius: 8,
     marginTop: 5,
+    maxHeight: 200,
+  },
+  searchResultsScroll: {
     maxHeight: 200,
   },
   searchResult: {
