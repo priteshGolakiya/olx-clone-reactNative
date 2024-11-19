@@ -229,7 +229,7 @@ const RootLayout = () => {
     },
     headerShadowVisible: false,
     headerTitleStyle: {
-      fontSize: 18,
+      fontSize: 24,
       fontWeight: "600" as const,
     },
 
@@ -250,6 +250,10 @@ const RootLayout = () => {
               <Stack.Screen
                 name="productDetails/[id]"
                 options={{
+                  ...authScreenOptions,
+                  headerStyle: {
+                    backgroundColor: "#F5F5F5",
+                  },
                   title: t("productDetails"),
                 }}
               />

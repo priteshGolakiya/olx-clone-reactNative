@@ -40,6 +40,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const token = useAppSelector((state) => state.token.token);
+  console.log("token::: ", token);
   const dispatch = useAppDispatch();
 
   const fetchUserData = async () => {
