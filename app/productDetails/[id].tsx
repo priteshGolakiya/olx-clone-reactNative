@@ -29,6 +29,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "@/utils/apiConfig";
+import { useTranslation } from "react-i18next";
 
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = Platform.OS === "ios" ? 88 : 64;
@@ -72,6 +73,7 @@ interface ProductDetails {
 }
 
 const ProductDetailsScreen = () => {
+  const { t } = useTranslation();
   const [product, setProduct] = useState<ProductDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -341,7 +343,7 @@ const ProductDetailsScreen = () => {
         <View style={styles.contentContainer}>
           <View style={styles.headerContainer}>
             <View>
-              <Text style={styles.category}>{product.category}</Text>
+              <Text style={styles.category}>{t(product.category)}</Text>
               <Text style={styles.title}>{product.title}</Text>
               <Text style={styles.price}>₹{product.price}</Text>
             </View>

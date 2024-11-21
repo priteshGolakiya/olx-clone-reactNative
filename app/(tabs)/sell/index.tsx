@@ -208,30 +208,30 @@ export default function SellScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Sell Your Product</Text>
+        <Text style={styles.title}>{t("Sell Your Product")}</Text>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Product Name</Text>
+          <Text style={styles.label}>{t("Product Name")}</Text>
           <TextInput
             style={styles.input}
             value={formData.title}
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, title: text }))
             }
-            placeholder="Enter product name"
+            placeholder={t("Enter product name")}
           />
 
-          <Text style={styles.label}>Price</Text>
+          <Text style={styles.label}>{t("price")}</Text>
           <TextInput
             style={styles.input}
             value={formData.price}
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, price: text }))
             }
-            placeholder="Enter price"
+            placeholder={t("Enter price")}
             keyboardType="numeric"
           />
 
-          <Text style={styles.label}>Category</Text>
+          <Text style={styles.label}>{t("Category")}</Text>
           {loadingCategories ? (
             <ActivityIndicator
               size="small"
@@ -250,7 +250,7 @@ export default function SellScreen() {
                 mode="dropdown"
               >
                 <Picker.Item
-                  label="Select a category"
+                  label={t("Select a category")}
                   value=""
                   style={styles.pickerPlaceholder}
                 />
@@ -266,14 +266,14 @@ export default function SellScreen() {
             </View>
           )}
 
-          <Text style={styles.label}>Description</Text>
+          <Text style={styles.label}>{t("Description")}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={formData.description}
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, description: text }))
             }
-            placeholder="Enter product description"
+            placeholder={t("Enter product description")}
             multiline
             numberOfLines={4}
           />
@@ -288,7 +288,7 @@ export default function SellScreen() {
               disabled={images.length >= MAX_IMAGES}
             >
               <Text style={styles.imagePickerButtonText}>
-                Add Images ({images.length}/{MAX_IMAGES})
+                {t("Add Images")} ({images.length}/{MAX_IMAGES})
               </Text>
             </TouchableOpacity>
 
@@ -316,7 +316,7 @@ export default function SellScreen() {
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>List Product</Text>
+              <Text style={styles.submitButtonText}>{t("Post Ads")}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -373,7 +373,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 5,
     marginVertical: Platform.OS === "ios" ? 4 : 0,
-    
   },
   pickerPlaceholder: {
     fontSize: 16,

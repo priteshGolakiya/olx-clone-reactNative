@@ -5,6 +5,7 @@ import { Link, useRouter } from "expo-router";
 import axios from "axios";
 import { BASE_URL } from "@/utils/apiConfig";
 import { useAppSelector } from "@/store/hooks";
+import { useTranslation } from "react-i18next";
 
 interface APIAddress {
   _id: string;
@@ -42,6 +43,7 @@ const AddressList: React.FC<AddressListProps> = ({
   const isAPIAddress = (address: Address): address is APIAddress => {
     return "_id" in address;
   };
+  const { t } = useTranslation();
 
   const router = useRouter();
   const token = useAppSelector((state) => state.token.token);
@@ -106,7 +108,7 @@ const AddressList: React.FC<AddressListProps> = ({
       <View style={styles.addressCard}>
         <View style={styles.addressHeader}>
           <Text style={styles.addressType}>
-            {isAPIAddress(address) ? "Home" : address.type}
+            {isAPIAddress(address) ? t("Home") : address.type}
           </Text>
           {!isAPIAddress(address) && address.isDefault && (
             <View style={styles.defaultBadge}>
@@ -123,7 +125,7 @@ const AddressList: React.FC<AddressListProps> = ({
             }}
           >
             <Ionicons name="create-outline" size={20} color="#007AFF" />
-            <Text style={styles.actionButtonText}>Edit</Text>
+            <Text style={styles.actionButtonText}>{t("Edit")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
@@ -133,7 +135,7 @@ const AddressList: React.FC<AddressListProps> = ({
           >
             <Ionicons name="trash-outline" size={20} color="#dc3545" />
             <Text style={[styles.actionButtonText, { color: "#dc3545" }]}>
-              Delete
+              {t("Delete")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -143,7 +145,7 @@ const AddressList: React.FC<AddressListProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.sectionTitle}>Saved Addresses</Text>
+      <Text style={styles.sectionTitle}>{t("Saved Addresses")}</Text>
       <View style={styles.addressList}>
         {addresses.map((address) => (
           <View key={isAPIAddress(address) ? address._id : address.id}>
@@ -151,13 +153,13 @@ const AddressList: React.FC<AddressListProps> = ({
           </View>
         ))}
         {addresses.length === 0 && (
-          <Text style={styles.emptyText}>No addresses found</Text>
+          <Text style={styles.emptyText}>{t("No addresses found")}</Text>
         )}
       </View>
       <Link href={"/(tabs)/profile/addAddress"} asChild>
         <TouchableOpacity style={styles.addButton}>
           <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-          <Text style={styles.addButtonText}>Add New Address</Text>
+          <Text style={styles.addButtonText}>{t("Add New Address")}</Text>
         </TouchableOpacity>
       </Link>
     </View>
