@@ -65,6 +65,7 @@ const ProfileLayout = () => {
   const user = useAppSelector((state) => state.user);
   const isAdmin = user.role === "admin";
   const { t } = useTranslation();
+  // Add a console log to see what's being translated
   if (isAdmin) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -82,8 +83,8 @@ const ProfileLayout = () => {
           <Drawer.Screen
             name="users"
             options={{
-              title: "Users Management",
-              drawerLabel: "Users",
+              title: t("Users Management"),
+              drawerLabel: t("Users"),
               drawerIcon: ({ size, color }) => (
                 <Ionicons name="people-outline" size={size} color={color} />
               ),
@@ -110,14 +111,14 @@ const ProfileLayout = () => {
         <Stack.Screen
           name="index"
           options={{
-            title: "Profile",
+            title: t("Profile"),
           }}
         />
         <Stack.Screen
           name="editAddress"
           options={{
             presentation: "modal",
-            title: "Edit Address",
+            title: t("Edit Address"),
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()}>
                 <Ionicons name="close-outline" size={28} />
@@ -129,7 +130,7 @@ const ProfileLayout = () => {
           name="addAddress"
           options={{
             presentation: "modal",
-            title: "Add Address",
+            title: t("Add Address"),
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()}>
                 <Ionicons name="close-outline" size={28} />

@@ -170,6 +170,7 @@ import { BASE_URL } from "@/utils/apiConfig";
 import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
 import "react-native-get-random-values";
+import { useTranslation } from "react-i18next";
 
 const OPENCAGE_API_KEY = "da3020cad2cc4ee79e7d4669235ca88f";
 
@@ -221,6 +222,7 @@ const CreateAddress: React.FC = () => {
   const [searchResults, setSearchResults] = useState<OpenCageResult[]>([]);
   const [searching, setSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const { t } = useTranslation();
 
   const token = useAppSelector((state) => state.token.token);
   const clearSearch = () => {
@@ -256,7 +258,6 @@ const CreateAddress: React.FC = () => {
     components: OpenCageComponents,
     geometry: OpenCageGeometry
   ): AddressFormData => {
-    console.log("components::: ", components);
     const street =
       components.road !== "unnamed road"
         ? components.suburb
@@ -299,8 +300,8 @@ const CreateAddress: React.FC = () => {
 
       if (!locationPermission) {
         Alert.alert(
-          "Permission Required",
-          "Please enable location services to use this feature."
+          t("Permission Required"),
+          t("Please enable location services to use this feature.")
         );
         return;
       }
@@ -321,7 +322,10 @@ const CreateAddress: React.FC = () => {
         setFormData(formattedAddress);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to get current location. Please try again.");
+      Alert.alert(
+        t("Error"),
+        t("Failed to get current location. Please try again.")
+      );
       console.error(error);
     } finally {
       setLoading(false);
@@ -343,8 +347,8 @@ const CreateAddress: React.FC = () => {
 
       if (emptyFields.length > 0) {
         Alert.alert(
-          "Missing Information",
-          "Please fill in all address fields."
+          t("Missing Information"),
+          t("Please fill in all address fields.")
         );
         return;
       }
@@ -374,7 +378,7 @@ const CreateAddress: React.FC = () => {
         throw new Error("Failed to create address");
       }
 
-      Alert.alert("Success", "Address created successfully!", [
+      Alert.alert(t("Success"), t("Address updated successfully!"), [
         {
           text: "OK",
           onPress: () => router.back(),
@@ -382,7 +386,7 @@ const CreateAddress: React.FC = () => {
       ]);
     } catch (err) {
       console.error("Error creating address:", err);
-      Alert.alert("Error", "Failed to create address. Please try again.");
+      Alert.alert(t("Error"), t("Failed to update address. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -420,7 +424,7 @@ const CreateAddress: React.FC = () => {
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <TextInput
-              placeholder="Search for an address"
+              placeholder={t("Search for an address")}
               value={searchQuery}
               onChangeText={setSearchQuery}
               style={styles.searchInput}
@@ -449,13 +453,15 @@ const CreateAddress: React.FC = () => {
             onPress={getCurrentLocation}
           >
             <MaterialIcons name="my-location" size={24} color="#FF385C" />
-            <Text style={styles.locationButtonText}>Use Current Location</Text>
+            <Text style={styles.locationButtonText}>
+              {t("Use Current Location")}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.formContainer}>
           <TextInput
-            placeholder="Street Address"
+            placeholder={t("Street Address")}
             value={formData.street}
             onChangeText={(text) => setFormData({ ...formData, street: text })}
             style={[defaultStyles.inputField, { marginBottom: 15 }]}
@@ -463,7 +469,7 @@ const CreateAddress: React.FC = () => {
           />
 
           <TextInput
-            placeholder="City"
+            placeholder={t("City")}
             value={formData.city}
             onChangeText={(text) => setFormData({ ...formData, city: text })}
             style={[defaultStyles.inputField, { marginBottom: 15 }]}
@@ -472,7 +478,7 @@ const CreateAddress: React.FC = () => {
           />
 
           <TextInput
-            placeholder="State"
+            placeholder={t("State")}
             value={formData.state}
             onChangeText={(text) => setFormData({ ...formData, state: text })}
             style={[defaultStyles.inputField, { marginBottom: 15 }]}
@@ -480,7 +486,7 @@ const CreateAddress: React.FC = () => {
           />
 
           <TextInput
-            placeholder="Country"
+            placeholder={t("Country")}
             value={formData.country}
             onChangeText={(text) => setFormData({ ...formData, country: text })}
             style={[defaultStyles.inputField, { marginBottom: 15 }]}
@@ -488,7 +494,7 @@ const CreateAddress: React.FC = () => {
           />
 
           <TextInput
-            placeholder="ZIP Code"
+            placeholder={t("Zip Code")}
             value={formData.zipCode}
             onChangeText={(text) => setFormData({ ...formData, zipCode: text })}
             style={[defaultStyles.inputField, { marginBottom: 30 }]}
@@ -504,7 +510,7 @@ const CreateAddress: React.FC = () => {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={defaultStyles.btnText}>Save Address</Text>
+              <Text style={defaultStyles.btnText}>{t("Save Address")}</Text>
             )}
           </TouchableOpacity>
         </View>

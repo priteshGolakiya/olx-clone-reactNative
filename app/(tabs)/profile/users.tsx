@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { BASE_URL } from "@/utils/apiConfig";
+import { useTranslation } from "react-i18next";
 
 interface User {
   _id: string;
@@ -31,6 +32,7 @@ const UsersManagement = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const token = useAppSelector((state) => state.token.token);
+  const { t } = useTranslation();
 
   const fetchUsers = async () => {
     try {
@@ -205,7 +207,7 @@ const UsersManagement = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Users Management</Text>
+      <Text style={styles.header}>{t("Users Management")}</Text>
       <FlatList
         data={users}
         renderItem={renderItem}
