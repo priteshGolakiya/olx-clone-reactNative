@@ -100,9 +100,8 @@ const Login = () => {
           router.push("/(tabs)/profile");
         }
       } catch (error: any) {
-        console.log("error::: ", error);
         setErrors({
-          submit: error.response?.data?.message || "Invalid email or password",
+          submit: error.response?.data.message || "Invalid email or password",
         });
       } finally {
         setLoading(false);

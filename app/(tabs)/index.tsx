@@ -574,11 +574,13 @@
 
 // export default HomeScreen;
 
+import { useDebounce } from "@/hooks/useDebounce";
 import { BASE_URL } from "@/utils/apiConfig";
+import { FontAwesome } from "@expo/vector-icons";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -591,6 +593,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -808,8 +811,27 @@ const formatDate = (dateString: string) => {
     minute: "2-digit",
   });
 };
-const ProductGrid = ({ products }: ProductGridProps) => {
-  if (products.length === 0) {
+interface PaginationData {
+  total: number;
+  page: number;
+  pages: number;
+  hasMore: boolean;
+}
+
+const ProductGrid = ({
+  products,
+  onLoadMore,
+  loading,
+  refreshing,
+  onRefresh,
+}: {
+  products: Product[];
+  onLoadMore: () => void;
+  loading: boolean;
+  refreshing: boolean;
+  onRefresh: () => void;
+}) => {
+  if (products.length === 0 && !loading) {
     return <EmptyProductList />;
   }
 
@@ -817,17 +839,16 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     <ProductCard item={item} />
   );
 
-  const ListFooterComponent = () => (
-    // Add padding at the bottom to ensure last items are fully visible
-    <View style={{ height: SPACING * 6 }} />
-  );
+  const renderFooter = () => {
+    if (!loading) return <View style={{ height: SPACING * 6 }} />;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  };
 
-  const ListHeaderComponent = () => (
-    // Add padding at the top for consistent spacing
-    <View style={{ height: SPACING / 12 }} />
-  );
-
-  const ItemSeparatorComponent = () => <View style={{ height: SPACING }} />;
+  const renderHeader = () => <View style={{ height: SPACING / 12 }} />;
 
   return (
     <FlatList
@@ -838,13 +859,17 @@ const ProductGrid = ({ products }: ProductGridProps) => {
       contentContainerStyle={styles.gridContainer}
       columnWrapperStyle={styles.columnWrapper}
       showsVerticalScrollIndicator={false}
-      ListHeaderComponent={ListHeaderComponent}
-      ListFooterComponent={ListFooterComponent}
-      ItemSeparatorComponent={ItemSeparatorComponent}
+      ListHeaderComponent={renderHeader}
+      ListFooterComponent={renderFooter}
+      ItemSeparatorComponent={() => <View style={{ height: SPACING }} />}
       initialNumToRender={6}
       maxToRenderPerBatch={8}
       windowSize={5}
       removeClippedSubviews={Platform.OS === "android"}
+      onEndReached={onLoadMore}
+      onEndReachedThreshold={0.5}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       getItemLayout={(data, index) => ({
         length: CARD_HEIGHT + SPACING,
         offset: (CARD_HEIGHT + SPACING) * Math.floor(index / 2),
@@ -859,52 +884,179 @@ const HomeScreen: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [pagination, setPagination] = useState<PaginationData>({
+    total: 0,
+    page: 1,
+    pages: 1,
+    hasMore: true,
+  });
 
-  const fetchProducts = async (categoryId: string) => {
+  const { t } = useTranslation();
+
+  // Keep track of whether we're loading more products
+  const loadingMore = useRef(false);
+
+  // Function to fetch products with pagination
+  const fetchProducts = async (
+    categoryId: string,
+    search?: string,
+    page: number = 1,
+    loadMore: boolean = false
+  ) => {
+    if (loading || (loadMore && !pagination.hasMore)) return;
+
     setLoading(true);
     try {
-      const endpoint =
-        categoryId === "all"
-          ? `${BASE_URL}/product`
-          : `${BASE_URL}/category/${categoryId}/product`;
+      let endpoint = `${BASE_URL}/product`;
 
-      const response = await axios.get<{ products: Product[] }>(endpoint);
-      setProducts(response.data.products);
+      if (categoryId !== "all") {
+        endpoint = `${BASE_URL}/category/${categoryId}/product`;
+      }
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      params.append("page", page.toString());
+      params.append("limit", "10");
+
+      const finalEndpoint = `${endpoint}?${params.toString()}`;
+      const response = await axios.get<{
+        products: Product[];
+        pagination: PaginationData;
+      }>(finalEndpoint);
+
+      if (loadMore) {
+        setProducts((prev) => [...prev, ...response.data.products]);
+      } else {
+        setProducts(response.data.products);
+      }
+
+      setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching products:", error);
+      if (!loadMore) setProducts([]);
     } finally {
       setLoading(false);
+      loadingMore.current = false;
     }
   };
+
+  // Handle load more
+  const handleLoadMore = () => {
+    if (
+      !loading &&
+      !loadingMore.current &&
+      pagination.hasMore &&
+      products.length > 0
+    ) {
+      loadingMore.current = true;
+      const nextPage = pagination.page + 1;
+      fetchProducts(selectedCategory, searchQuery, nextPage, true);
+    }
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setPagination({
+      total: 0,
+      page: 1,
+      pages: 1,
+      hasMore: true,
+    });
+    fetchProducts(selectedCategory, searchQuery, 1).finally(() =>
+      setRefreshing(false)
+    );
+  };
+
+  // Debounced search handler
+  const handleSearch = useDebounce(
+    (query: string) => {
+      setPagination({
+        total: 0,
+        page: 1,
+        pages: 1,
+        hasMore: true,
+      });
+      fetchProducts(selectedCategory, query, 1);
+    },
+    {
+      delay: 500,
+      maxWait: 2000,
+    }
+  );
+
+  // Effect for category changes
   useFocusEffect(
     useCallback(() => {
-      fetchProducts(selectedCategory);
+      setPagination({
+        total: 0,
+        page: 1,
+        pages: 1,
+        hasMore: true,
+      });
+      fetchProducts(selectedCategory, searchQuery, 1);
     }, [selectedCategory])
   );
+
+  // Handler for search input
+  const onSearchChange = (text: string) => {
+    setSearchQuery(text);
+    handleSearch(text);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <Text style={styles.screenTitle}>Explore Products</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t("Search products")}
+            placeholderTextColor={COLORS.textLight}
+            value={searchQuery}
+            onChangeText={onSearchChange}
+            returnKeyType="search"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {loading && !loadingMore.current ? (
+            <ActivityIndicator
+              size="small"
+              color={COLORS.primary}
+              style={styles.searchIcon}
+            />
+          ) : (
+            <FontAwesome name="search" size={20} style={styles.searchIcon} />
+          )}
         </View>
 
         <View style={{ marginBottom: 12 }}>
           <CategoryList
             categories={categories}
             selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
+            onSelectCategory={(category) => {
+              setSelectedCategory(category);
+              setPagination({
+                total: 0,
+                page: 1,
+                pages: 1,
+                hasMore: true,
+              });
+              fetchProducts(category, searchQuery, 1);
+            }}
           />
         </View>
 
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
-        ) : (
-          <ProductGrid products={products} />
-        )}
+        <ProductGrid
+          products={products}
+          onLoadMore={handleLoadMore}
+          loading={loadingMore.current}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
       </View>
     </SafeAreaView>
   );
@@ -923,18 +1075,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 32,
+    marginVertical: 16,
+    position: "relative",
   },
-  screenTitle: {
-    fontSize: 30,
-    fontWeight: "800",
+  searchInput: {
+    flex: 1,
+    height: 40,
+    marginLeft: 16,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
     color: COLORS.text,
-    ...Platform.select({
-      ios: { letterSpacing: -0.7 },
-      android: { letterSpacing: -0.5 },
-    }),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingRight: 40,
   },
+  searchIcon: {
+    position: "absolute",
+    right: 45,
+    alignSelf: "center",
+  },
+
   categoryListContent: {
     paddingHorizontal: 16,
   },
@@ -1119,6 +1282,11 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     textAlign: "center",
     lineHeight: 20,
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

@@ -5,6 +5,7 @@ import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { RefreshControl } from "react-native-gesture-handler";
 
 const { width } = Dimensions.get("window");
 const SPACING = 12;
@@ -47,8 +49,34 @@ interface Ads {
   createdAt: string;
   updatedAt: string;
   title: string;
+  status: string;
   description: string;
 }
+
+interface AdCardProps {
+  ad: Ads;
+  onDelete?: (id: string) => void;
+  onSell?: (id: string) => void;
+}
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  hasMore: boolean;
+}
+
+const getStatusColor = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case "approved":
+      return "#4CAF50"; // Green
+    case "pending":
+      return "#FFA000"; // Amber
+    case "rejected":
+      return "#F44336"; // Red
+    default:
+      return "#757575"; // Default Grey
+  }
+};
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -67,15 +95,28 @@ const showToast = (message: string) => {
   }
 };
 
-const AdCard: React.FC<{ ad: Ads; onDelete: (id: string) => void }> = ({
-  ad,
-  onDelete,
-}) => {
-  const router = useRouter();
+const AdCard: React.FC<AdCardProps> = ({ ad, onDelete, onSell }) => {
   const [isPressed, setIsPressed] = useState(false);
+  const statusColor = getStatusColor(ad.status);
+  const router = useRouter();
+  const { t } = useTranslation();
+
   const redirectToDetails = (id: string) => {
     router.push(`/productDetails/${id}`);
   };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(ad._id);
+    }
+  };
+
+  const handleSell = () => {
+    if (onSell) {
+      onSell(ad._id);
+    }
+  };
+
   return (
     <TouchableOpacity
       style={styles.cardContainer}
@@ -85,23 +126,28 @@ const AdCard: React.FC<{ ad: Ads; onDelete: (id: string) => void }> = ({
       onPressOut={() => setIsPressed(false)}
     >
       <View style={[styles.card, isPressed && styles.cardPressed]}>
-        {/* Image Section */}
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: ad.images[0] || "https://via.placeholder.com/150" }}
             style={styles.image}
-            resizeMode="contain"
+            resizeMode="cover"
           />
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.3)"]}
+            colors={["transparent", "rgba(0,0,0,0.5)"]}
             style={styles.imageOverlay}
           />
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceText}>₹{ad.price}</Text>
+          <View style={styles.badgesContainer}>
+            <View style={styles.priceContainer}>
+              <Text style={styles.priceText}>₹{ad.price}</Text>
+            </View>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusColor }]}
+            >
+              <Text style={styles.statusText}>{ad.status}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Content Section */}
         <View style={styles.contentContainer}>
           <Text style={styles.title} numberOfLines={1}>
             {ad.title}
@@ -110,23 +156,32 @@ const AdCard: React.FC<{ ad: Ads; onDelete: (id: string) => void }> = ({
             {ad.description}
           </Text>
           <Text style={styles.dateText}>{formatDate(ad.createdAt)}</Text>
+        </View>
 
-          {/* Delete Button */}
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => onDelete(ad._id)}
-          >
-            <Text style={styles.deleteButtonText}>Delete</Text>
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteButtonText}>{t("Delete")}</Text>
           </TouchableOpacity>
+
+          {ad.isActive ? (
+            <TouchableOpacity style={styles.sellButton} onPress={handleSell}>
+              <Text style={styles.sellButtonText}>{t("Sell")}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.sellButton, { backgroundColor: "orange" }]}
+            >
+              <Text style={styles.deleteButtonText}>{t("Sold out")}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </TouchableOpacity>
   );
 };
-
 const EmptyAdsList: React.FC = () => (
   <View style={styles.emptyContainer}>
-    <Text style={styles.emptyTitle}>No Ads Posted Yet</Text>
+    <Text style={styles.emptyTitle}>(t{"No Ads Posted Yet"})</Text>
     <Text style={styles.emptySubtitle}>Your posted ads will appear here</Text>
   </View>
 );
@@ -136,30 +191,54 @@ const MyAdsScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const token = useAppSelector((state) => state.token.token);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    hasMore: false,
+  });
+  const { t } = useTranslation();
+  const fetchUserAds = useCallback(
+    async (page: number = 1, refresh: boolean = false) => {
+      if (!token) return;
 
-  const fetchUserAds = useCallback(async () => {
-    if (!token) return;
-
-    setLoading(true);
-    try {
-      const response = await axios.get(`${BASE_URL}/user-ads`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.data.success) {
-        setAds(response.data.ads);
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
       }
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Failed to fetch ads";
-      showToast(errorMessage);
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [token]);
+
+      try {
+        const response = await axios.get(
+          `${BASE_URL}/user-ads?page=${page}&limit=10`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          if (refresh || page === 1) {
+            setAds(response.data.ads);
+          } else {
+            setAds((prevAds) => [...prevAds, ...response.data.ads]);
+          }
+          setPagination(response.data.pagination);
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message || "Failed to fetch ads";
+        showToast(errorMessage);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+        setIsRefreshing(false);
+      }
+    },
+    [token]
+  );
 
   const handleDeleteAd = useCallback(
     async (adId: string) => {
@@ -191,17 +270,79 @@ const MyAdsScreen: React.FC = () => {
     },
     [token]
   );
+  const handleSellAd = useCallback(
+    async (adId: string) => {
+      Alert.alert("Confirm Sale", "Mark this ad as sold?", [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          style: "default",
+          onPress: async () => {
+            try {
+              const response = await axios.post(
+                `${BASE_URL}/product/sell/${adId}`,
+                {},
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              if (response.data.success) {
+                // Update the local state to reflect the sold status
+                setAds((prev) =>
+                  prev.map((ad) =>
+                    ad._id === adId ? { ...ad, isActive: false } : ad
+                  )
+                );
+                showToast("Ad marked as sold successfully");
+              }
+            } catch (error: any) {
+              console.log("error::: ", error);
+              const errorMessage =
+                error.response?.data?.message || "Failed to mark ad as sold";
+              showToast(errorMessage);
+            }
+          },
+        },
+      ]);
+    },
+    [token]
+  );
+  const handleLoadMore = useCallback(() => {
+    if (
+      !loadingMore &&
+      pagination.hasMore &&
+      pagination.currentPage < pagination.totalPages
+    ) {
+      fetchUserAds(pagination.currentPage + 1);
+    }
+  }, [loadingMore, pagination, fetchUserAds]);
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    fetchUserAds();
+    fetchUserAds(1, true);
   }, [fetchUserAds]);
 
   useEffect(() => {
     if (token) {
-      fetchUserAds();
+      fetchUserAds(1);
     }
   }, [token, fetchUserAds]);
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+      </View>
+    );
+  };
 
   if (!token) {
     return <NotLoggedIn />;
@@ -212,10 +353,15 @@ const MyAdsScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Ads</Text>
+          <Text style={styles.headerTitle}>{t("My Ads")}</Text>
+          {pagination.totalItems > 0 && (
+            <Text style={styles.headerSubtitle}>
+              {t("Total Ads")}: {pagination.totalItems}
+            </Text>
+          )}
         </View>
 
-        {loading && !isRefreshing ? (
+        {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.primary} />
           </View>
@@ -223,19 +369,34 @@ const MyAdsScreen: React.FC = () => {
           <FlatList
             data={ads}
             renderItem={({ item }) => (
-              <AdCard ad={item} onDelete={handleDeleteAd} />
+              <AdCard
+                ad={item}
+                onDelete={handleDeleteAd}
+                onSell={handleSellAd}
+              />
             )}
             keyExtractor={(item) => item._id.toString()}
             numColumns={2}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={[
+              styles.listContainer,
+              { paddingBottom: SPACING * 8 }, // Add extra padding at the bottom
+            ]}
             columnWrapperStyle={styles.columnWrapper}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={EmptyAdsList}
             ItemSeparatorComponent={() => <View style={{ height: SPACING }} />}
             ListHeaderComponent={() => <View style={{ height: SPACING }} />}
-            ListFooterComponent={() => <View style={{ height: SPACING * 5 }} />}
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
+            ListFooterComponent={renderFooter}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[COLORS.primary]}
+                tintColor={COLORS.primary}
+              />
+            }
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
           />
         )}
       </View>
@@ -281,7 +442,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     overflow: "hidden",
     ...Platform.select({
@@ -289,7 +450,7 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 8,
       },
       android: {
         elevation: 4,
@@ -306,53 +467,73 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+    backgroundColor: "#F5F5F5",
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  priceContainer: {
+  badgesContainer: {
     position: "absolute",
     bottom: 8,
     left: 8,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
+    right: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  priceContainer: {
+    backgroundColor: "#5E72E4",
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
   },
   priceText: {
-    color: COLORS.white,
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
   },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  statusText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
   contentContainer: {
     padding: 12,
+    flex: 1,
+    justifyContent: "space-between",
   },
   title: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.text,
+    color: "#32325D",
     marginBottom: 4,
   },
   description: {
     fontSize: 13,
-    color: COLORS.textLight,
+    color: "#8A94A6",
     marginBottom: 8,
+    lineHeight: 18,
   },
   dateText: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: "#8A94A6",
     marginBottom: 8,
   },
   deleteButton: {
-    backgroundColor: COLORS.danger,
-    paddingVertical: 6,
+    backgroundColor: "#FF4444",
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
     alignItems: "center",
-    marginTop: 4,
+    marginTop: "auto",
   },
   deleteButtonText: {
-    color: COLORS.white,
+    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
   },
@@ -372,6 +553,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textLight,
     textAlign: "center",
+  },
+  footerLoader: {
+    paddingVertical: SPACING,
+    alignItems: "center",
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginTop: 4,
+  },
+  actionButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 12,
+  },
+  sellButton: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: "center",
+    flex: 1,
+    marginLeft: 8,
+  },
+  sellButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
 

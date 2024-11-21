@@ -19,6 +19,7 @@ import { logout } from "@/store/slices/userSlices";
 import { BASE_URL } from "@/utils/apiConfig";
 import NotLoggedIn from "@/components/NotLoggedIn";
 import AddressList from "@/components/profile/Address";
+import { useTranslation } from "react-i18next";
 
 interface UserData {
   username: string;
@@ -40,8 +41,8 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const token = useAppSelector((state) => state.token.token);
-  console.log("token::: ", token);
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
 
   const fetchUserData = async () => {
     try {
@@ -122,7 +123,7 @@ const ProfilePage: React.FC = () => {
         </View>
         <TouchableOpacity style={styles.logoutButton} onPress={logoutHandler}>
           <Ionicons name="log-out-outline" size={24} color="#FFF" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>{t("Logout")}</Text>
         </TouchableOpacity>
       </View>
       <AddressList
