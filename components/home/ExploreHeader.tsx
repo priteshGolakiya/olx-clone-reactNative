@@ -278,6 +278,7 @@ import {
   Dimensions,
   SafeAreaView,
 } from "react-native";
+import LoaderContainer from "../LoaderContainer";
 
 // Get device width for responsive design
 const { width } = Dimensions.get("window");
@@ -326,16 +327,7 @@ const ExploreHeader: React.FC<ExploreHeaderProps> = ({
   };
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <LottieView
-          source={require("@/assets/images/Loader.json")}
-          autoPlay
-          loop
-          style={styles.lottieAnimation}
-        />
-      </View>
-    );
+    return <LoaderContainer />;
   }
 
   if (error) {

@@ -1,9 +1,10 @@
+import LoaderContainer from "@/components/LoaderContainer";
 import NotLoggedIn from "@/components/NotLoggedIn";
 import { useAppSelector } from "@/store/hooks";
 import { BASE_URL } from "@/utils/apiConfig";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Link, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -101,9 +102,9 @@ const AdCard: React.FC<AdCardProps> = ({ ad, onDelete, onSell }) => {
   const router = useRouter();
   const { t } = useTranslation();
 
-  const redirectToDetails = (id: string) => {
-    router.push(`/productDetails/${id}`);
-  };
+  // const redirectToDetails = (id: string) => {
+  //   router.push(`/productDetails/${id}`);
+  // };
 
   const handleDelete = () => {
     if (onDelete) {
@@ -116,7 +117,9 @@ const AdCard: React.FC<AdCardProps> = ({ ad, onDelete, onSell }) => {
       onSell(ad._id);
     }
   };
-
+  const redirectToDetails = (id: string) => {
+    router.push(`/(tabs)/myAds/editProduct/${id}`); // Update this path according to your routing structure
+  };
   return (
     <TouchableOpacity
       style={styles.cardContainer}
@@ -179,12 +182,23 @@ const AdCard: React.FC<AdCardProps> = ({ ad, onDelete, onSell }) => {
     </TouchableOpacity>
   );
 };
-const EmptyAdsList: React.FC = () => (
-  <View style={styles.emptyContainer}>
-    <Text style={styles.emptyTitle}>(t{"No Ads Posted Yet"})</Text>
-    <Text style={styles.emptySubtitle}>Your posted ads will appear here</Text>
-  </View>
-);
+
+const EmptyAdsList: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyTitle}>{t("No Ads Posted Yet")}</Text>
+      <Text style={styles.emptySubtitle}>
+        {t("Your posted ads will appear here")}
+      </Text>
+      <Link href="/(tabs)/sell" asChild>
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>{t("Post an Ad")}</Text>
+        </TouchableOpacity>
+      </Link>
+    </View>
+  );
+};
 
 const MyAdsScreen: React.FC = () => {
   const [ads, setAds] = useState<Ads[]>([]);
@@ -199,6 +213,7 @@ const MyAdsScreen: React.FC = () => {
     hasMore: false,
   });
   const { t } = useTranslation();
+
   const fetchUserAds = useCallback(
     async (page: number = 1, refresh: boolean = false) => {
       if (!token) return;
@@ -263,7 +278,7 @@ const MyAdsScreen: React.FC = () => {
               const errorMessage =
                 error.response?.data?.message || "Failed to delete ad";
               showToast(errorMessage);
-            }
+            } 
           },
         },
       ]);
@@ -328,11 +343,24 @@ const MyAdsScreen: React.FC = () => {
     fetchUserAds(1, true);
   }, [fetchUserAds]);
 
-  useEffect(() => {
-    if (token) {
-      fetchUserAds(1);
-    }
-  }, [token, fetchUserAds]);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchData = async () => {
+        if (token && isActive) {
+          await fetchUserAds(1, true);
+        }
+      };
+
+      fetchData();
+
+      // Cleanup function
+      return () => {
+        isActive = false;
+      };
+    }, [token, fetchUserAds])
+  );
 
   const renderFooter = () => {
     if (!loadingMore) return null;
@@ -362,9 +390,7 @@ const MyAdsScreen: React.FC = () => {
         </View>
 
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
+          <LoaderContainer />
         ) : (
           <FlatList
             data={ads}
@@ -553,6 +579,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textLight,
     textAlign: "center",
+  },
+  button: {
+    backgroundColor: "#007BFF",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    margin: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   footerLoader: {
     paddingVertical: SPACING,

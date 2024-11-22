@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native-gesture-handler";
 import { useTranslation } from "react-i18next";
+import LottieView from "lottie-react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -50,8 +51,14 @@ const NotLoggedIn = () => {
     <ScrollView>
       <View style={styles.container}>
         {/* Header Image */}
-        <Image
+        {/* <Image
           source={{ uri: "https://via.placeholder.com/400x200" }}
+          style={styles.headerImage}
+        /> */}
+        <LottieView
+          source={require("@/assets/lottie/notLogin.json")}
+          autoPlay
+          loop
           style={styles.headerImage}
         />
 

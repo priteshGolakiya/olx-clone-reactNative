@@ -30,6 +30,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "@/utils/apiConfig";
 import { useTranslation } from "react-i18next";
+import LoaderContainer from "@/components/LoaderContainer";
+import Carousel from "react-native-reanimated-carousel";
 
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = Platform.OS === "ios" ? 88 : 64;
@@ -72,6 +74,8 @@ interface ProductDetails {
   categoryId: string;
 }
 
+const DEFAULT_AVATAR = "@/assets/images/avatar.png";
+
 const ProductDetailsScreen = () => {
   const { t } = useTranslation();
   const [product, setProduct] = useState<ProductDetails | null>(null);
@@ -81,6 +85,7 @@ const ProductDetailsScreen = () => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
 
   // Add this to prevent multiple API calls
   const isFirstRender = useRef(true);
@@ -181,10 +186,16 @@ const ProductDetailsScreen = () => {
       if (supported) {
         await Linking.openURL(phoneUrl);
       } else {
-        Alert.alert("Error", "Phone calls are not supported on this device");
+        Alert.alert(
+          t("Error"),
+          t("Phone calls are not supported on this device")
+        );
       }
     } catch (error) {
-      Alert.alert("Error", "Could not initiate phone call. Please try again.");
+      Alert.alert(
+        t("Error"),
+        t("Could not initiate phone call. Please try again.")
+      );
     }
   }, []);
 
@@ -193,7 +204,9 @@ const ProductDetailsScreen = () => {
       // Remove any non-numeric characters from phone number
       const cleanPhoneNumber = phoneNumber.replace(/\D/g, "");
       // Create message template
-      const message = `Hi, I'm interested in your listing: ${productTitle}. Could you provide more information?`;
+      const message = `${t(
+        "Hi, I'm interested in your listing"
+      )}: ${productTitle}. ${t("Could you provide more information?")}`;
       // Create WhatsApp URL with phone number and encoded message
       const whatsappUrl = `whatsapp://send?phone=${cleanPhoneNumber}&text=${encodeURIComponent(
         message
@@ -212,13 +225,63 @@ const ProductDetailsScreen = () => {
         }
       } catch (error) {
         Alert.alert(
-          "Error",
-          "Could not open WhatsApp. Please make sure it's installed."
+          t("Error"),
+          t("Could not open WhatsApp. Please make sure it's installed.")
         );
       }
     },
     []
   );
+
+  const renderCarouselItem = useCallback(
+    ({ item, index }: { item: string; index: number }) => {
+      return (
+        <Pressable
+          style={styles.carouselItem}
+          onPress={() => {
+            setModalImageIndex(index);
+            setIsModalVisible(true);
+          }}
+        >
+          <Image
+            source={{ uri: item }}
+            style={styles.petImage}
+            resizeMode="cover"
+          />
+        </Pressable>
+      );
+    },
+    []
+  );
+
+  const renderModalCarousel = useCallback(() => {
+    if (!product?.image) return null;
+
+    return (
+      <View style={styles.modalCarouselContainer}>
+        <Carousel
+          loop
+          width={width}
+          height={height * 0.7}
+          data={product.image}
+          defaultIndex={modalImageIndex}
+          onSnapToItem={(index) => setModalImageIndex(index)}
+          renderItem={({ item }) => (
+            <Image
+              source={{ uri: item }}
+              style={styles.modalImage}
+              resizeMode="contain"
+            />
+          )}
+        />
+        <View style={styles.modalPaginationContainer}>
+          <Text style={styles.modalPaginationText}>
+            {modalImageIndex + 1} / {product.image.length}
+          </Text>
+        </View>
+      </View>
+    );
+  }, [product, modalImageIndex]);
 
   const renderSellerCard = () => (
     <TouchableOpacity style={styles.sellerCard}>
@@ -227,7 +290,11 @@ const ProductDetailsScreen = () => {
         style={styles.sellerGradient}
       >
         <Image
-          source={{ uri: product?.user.profilePic }}
+          source={
+            product?.user?.profilePic
+              ? { uri: product.user.profilePic }
+              : require("@/assets/images/avatar.png")
+          }
           style={styles.sellerImage}
         />
         <View style={styles.sellerInfo}>
@@ -255,11 +322,7 @@ const ProductDetailsScreen = () => {
   );
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E31837" />
-      </View>
-    );
+    return <LoaderContainer />;
   }
 
   if (error || !product) {
@@ -277,14 +340,6 @@ const ProductDetailsScreen = () => {
     );
   }
 
-  const handleImagePress = (uri: string) => {
-    setImageUri(uri); // Set the full-size image URI
-    setIsModalVisible(true); // Show the modal
-  };
-  const closeModal = () => {
-    setIsModalVisible(false);
-  };
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -298,47 +353,40 @@ const ProductDetailsScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.imageContainer}>
-          <FlatList
-            data={product.image}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(e) => {
-              setCurrentImageIndex(
-                Math.round(e.nativeEvent.contentOffset.x / width)
-              );
-            }}
-            renderItem={({ item }) => (
-              <Pressable onPress={() => handleImagePress(item)}>
-                <Image
-                  source={{ uri: item }}
-                  style={styles.petImage}
-                  resizeMode="cover"
-                />
-              </Pressable>
-            )}
-            keyExtractor={(_, index) => index.toString()}
-          />
-          {renderImagePagination()}
-          <Modal
-            visible={isModalVisible}
-            transparent={true}
-            onRequestClose={closeModal}
-          >
-            <Pressable onPress={closeModal} style={styles.modalContainer}>
-              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                <Text style={styles.closeText}>Close</Text>
-              </TouchableOpacity>
-              {imageUri && (
-                <Image
-                  source={{ uri: imageUri }}
-                  style={styles.fullSizeImage}
-                  resizeMode="contain"
-                />
-              )}
-            </Pressable>
-          </Modal>
+          {product?.image && (
+            <Carousel
+              loop
+              autoPlay={true}
+              width={width}
+              height={width * 0.8}
+              data={product.image}
+              onSnapToItem={setCurrentImageIndex}
+              renderItem={renderCarouselItem}
+              autoPlayInterval={3000}
+            />
+          )}
+          <View style={styles.paginationContainer}>
+            <Text style={styles.paginationText}>
+              {currentImageIndex + 1} / {product?.image?.length || 0}
+            </Text>
+          </View>
         </View>
+        <Modal
+          visible={isModalVisible}
+          transparent={true}
+          onRequestClose={() => setIsModalVisible(false)}
+          animationType="fade"
+        >
+          <View style={styles.modalContainer}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+            {renderModalCarousel()}
+          </View>
+        </Modal>
 
         <View style={styles.contentContainer}>
           <View style={styles.headerContainer}>
@@ -421,6 +469,23 @@ const ProductDetailsScreen = () => {
           <Text style={styles.messageButtonText}>Message on WhatsApp</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        onRequestClose={() => setIsModalVisible(false)}
+        animationType="fade"
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setIsModalVisible(false)}
+          >
+            <Ionicons name="close" size={24} color="#fff" />
+          </TouchableOpacity>
+          {renderModalCarousel()}
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -443,10 +508,9 @@ const styles = StyleSheet.create({
     alignItems: "stretch", // Use 'stretch' instead of 'center' if you want full-width content
     paddingBottom: 100, // Add some bottom padding if needed
   },
-  thumbnail: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
+  carouselItem: {
+    width: width,
+    height: width * 0.8,
   },
   modalContainer: {
     flex: 1,
@@ -454,16 +518,72 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  modalCarouselContainer: {
+    width: width,
+    height: height * 0.7,
+  },
+  modalImage: {
+    width: width,
+    height: height * 0.7,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    zIndex: 1,
+    padding: 10,
+  },
+  modalPaginationContainer: {
+    position: "absolute",
+    bottom: 20,
+    alignSelf: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    padding: 8,
+    borderRadius: 20,
+  },
+  modalPaginationText: {
+    color: "#fff",
+    fontSize: 14,
+  },
+  paginationContainer: {
+    position: "absolute",
+    bottom: 20,
+    alignSelf: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    padding: 8,
+    borderRadius: 20,
+  },
+  paginationText: {
+    color: "#fff",
+    fontSize: 14,
+  },
+  sellerImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  thumbnail: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  // modalContainer: {
+  //   flex: 1,
+  //   backgroundColor: "rgba(0, 0, 0, 0.9)",
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  // },
   fullSizeImage: {
     width: "90%",
     height: "75%",
   },
-  closeButton: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-    padding: 10,
-  },
+  // closeButton: {
+  //   position: "absolute",
+  //   top: 50,
+  //   right: 20,
+  //   padding: 10,
+  // },
   closeText: {
     color: "#fff",
     fontSize: 18,
@@ -490,12 +610,12 @@ const styles = StyleSheet.create({
     width,
     height: height * 0.5,
   },
-  paginationContainer: {
-    flexDirection: "row",
-    position: "absolute",
-    bottom: 20,
-    alignSelf: "center",
-  },
+  // paginationContainer: {
+  //   flexDirection: "row",
+  //   position: "absolute",
+  //   bottom: 20,
+  //   alignSelf: "center",
+  // },
   paginationDot: {
     width: 8,
     height: 8,
@@ -564,11 +684,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
   },
-  sellerImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
+  // sellerImage: {
+  //   width: 48,
+  //   height: 48,
+  //   borderRadius: 24,
+  // },
   sellerInfo: {
     flex: 1,
     marginLeft: 16,

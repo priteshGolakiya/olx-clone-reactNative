@@ -15,6 +15,7 @@ import axios from "axios";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { BASE_URL } from "@/utils/apiConfig";
 import { useTranslation } from "react-i18next";
+import LoaderContainer from "@/components/LoaderContainer";
 
 interface User {
   _id: string;
@@ -41,7 +42,7 @@ const UsersManagement = () => {
       });
       setUsers(response.data.data);
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch users");
+      Alert.alert(t("Error"), t("Failed to fetch users"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -67,14 +68,14 @@ const UsersManagement = () => {
         )
       );
     } catch (error) {
-      Alert.alert("Error", "Failed to update user status");
+      Alert.alert(t("Error"), t("Failed to update user status"));
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
     Alert.alert(
-      "Confirm Delete",
-      "Are you sure you want to delete this user?",
+      t("Confirm Delete"),
+      t("Are you sure you want to delete this user?"),
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -87,7 +88,7 @@ const UsersManagement = () => {
               });
               setUsers(users.filter((user) => user._id !== userId));
             } catch (error) {
-              Alert.alert("Error", "Failed to delete user");
+              Alert.alert(t("Error"), t("Failed to delete user"));
             }
           },
         },
@@ -112,7 +113,7 @@ const UsersManagement = () => {
         )
       );
     } catch (error) {
-      Alert.alert("Error", "Failed to update user role");
+      Alert.alert(t("Error"), t("Failed to update user role"));
     }
   };
 
@@ -198,11 +199,7 @@ const UsersManagement = () => {
   );
 
   if (loading) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
+    return <LoaderContainer />;
   }
 
   return (
