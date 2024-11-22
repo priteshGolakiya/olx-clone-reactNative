@@ -16,6 +16,8 @@ import {
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
+import LoaderContainer from "@/components/LoaderContainer";
+import { useTranslation } from "react-i18next";
 
 const { width } = Dimensions.get("window");
 
@@ -35,6 +37,7 @@ interface Product {
 }
 
 const ProductManagement: React.FC = () => {
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,7 +57,7 @@ const ProductManagement: React.FC = () => {
       );
       setProducts(response.data.data);
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch products");
+      Alert.alert(t("Error"), t("Failed to fetch products"));
       console.error(error);
     } finally {
       setLoading(false);
@@ -91,10 +94,10 @@ const ProductManagement: React.FC = () => {
           },
         }
       );
-      Alert.alert("Success", `Product ${status} successfully`);
+      Alert.alert(t("Success"), `${t("product")} ${status} ${t("successfully")}`);
       fetchProducts();
     } catch (error) {
-      Alert.alert("Error", `Failed to ${status} product`);
+      Alert.alert(t("Error"), `${t("Failed to")} ${status} ${t("product")}`);
       console.error(error);
     }
   };
@@ -174,24 +177,20 @@ const ProductManagement: React.FC = () => {
   );
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0066CC" />
-      </View>
-    );
+    return <LoaderContainer />;
   }
 
   if (products.length === 0) {
     return (
       <View style={styles.emptyListContainer}>
-        <Text style={styles.emptyListText}>No products found.</Text>
+        <Text style={styles.emptyListText}>{t("No products found")}.</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Product Management</Text>
+      <Text style={styles.header}>{t("Product Management")}</Text>
       <FlatList
         data={products}
         renderItem={renderItem}

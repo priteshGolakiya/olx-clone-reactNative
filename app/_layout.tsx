@@ -176,7 +176,7 @@
 
 import React, { useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider } from "react-redux";
 import store, { persistor } from "@/store/store";
@@ -185,12 +185,13 @@ import "@/i18n";
 import { useTranslation } from "react-i18next";
 import LanguageButton from "@/components/LanguageButton";
 import LanguageSelector from "@/components/LanguageSelector/LanguageSelector";
-import { Text, View } from "react-native";
+import { Image, Text, View, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 
 const RootLayout = () => {
   const { t } = useTranslation();
+  const router = useRouter(); // Add useRouter for navigation
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
 
   const HeaderRight = () => (
@@ -203,9 +204,30 @@ const RootLayout = () => {
     </View>
   );
 
-  const HeaderCenter = () => (
-    <Text style={{ fontSize: 20, color: "black" }}>Store</Text>
-  );
+  const HeaderCenter = () => {
+    const LogoImage = () => (
+      <Image
+        source={require("@/assets/images/splash.png")}
+        style={{
+          width: 50,
+          height: 50,
+          borderRadius: 50,
+          borderColor: "black",
+          borderWidth: 1,
+        }}
+        resizeMode="contain"
+      />
+    );
+
+    return (
+      <TouchableOpacity
+        onPress={() => router.push("/(tabs)")}
+        style={{ flexDirection: "row", alignItems: "center" }}
+      >
+        <LogoImage />
+      </TouchableOpacity>
+    );
+  };
 
   const defaultScreenOptions: NativeStackNavigationOptions = {
     headerShown: true,
@@ -232,10 +254,8 @@ const RootLayout = () => {
       fontSize: 24,
       fontWeight: "600" as const,
     },
-
     headerRight: undefined,
     headerLeft: undefined,
-
     headerTitleAlign: "center" as const,
   };
 

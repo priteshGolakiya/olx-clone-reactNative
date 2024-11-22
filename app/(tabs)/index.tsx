@@ -574,6 +574,7 @@
 
 // export default HomeScreen;
 
+import LoaderContainer from "@/components/LoaderContainer";
 import { useDebounce } from "@/hooks/useDebounce";
 import { BASE_URL } from "@/utils/apiConfig";
 import { FontAwesome } from "@expo/vector-icons";
@@ -751,6 +752,21 @@ const ProductCard = ({ item }: { item: Product }) => {
   const redirectToDetails = (id: string) => {
     router.push(`/productDetails/${item._id}`);
   };
+
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + "...";
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   return (
     <TouchableOpacity
       style={styles.cardContainer}
@@ -767,7 +783,7 @@ const ProductCard = ({ item }: { item: Product }) => {
               uri: item.images[0] || "https://via.placeholder.com/150",
             }}
             style={styles.image}
-            resizeMode="contain"
+            resizeMode="cover"
           />
           <LinearGradient
             colors={["transparent", "rgba(0,0,0,0.2)"]}
@@ -790,17 +806,22 @@ const ProductCard = ({ item }: { item: Product }) => {
         {/* Content Section */}
         <View style={styles.contentContainer}>
           <Text style={styles.title} numberOfLines={1}>
-            {item.title}
+            {truncateText(item.title, 20)}
           </Text>
-          <Text style={styles.description} numberOfLines={2}>
-            {item.description}
-          </Text>
-          <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.description} numberOfLines={2}>
+              {truncateText(item.description, 20)}
+            </Text>
+          </View>
+          <View style={styles.dateContainer}>
+            <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
   );
 };
+
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", {
@@ -843,7 +864,8 @@ const ProductGrid = ({
     if (!loading) return <View style={{ height: SPACING * 6 }} />;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        {/* <ActivityIndicator size="large" color={COLORS.primary} /> */}
+        <LoaderContainer />
       </View>
     );
   };
@@ -1063,6 +1085,87 @@ const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  contentContainer: {
+    flex: 1,
+    padding: 12,
+    justifyContent: "space-between",
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  descriptionContainer: {
+    flex: 1,
+    marginVertical: 4,
+  },
+  description: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    lineHeight: 18,
+  },
+  dateContainer: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: 8,
+    marginTop: 8,
+    alignItems: "flex-end",
+  },
+  dateText: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    fontWeight: "500",
+  },
+  cardContainer: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT + 30,
+    marginBottom: 0,
+  },
+  card: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.shadow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  imageContainer: {
+    height: CARD_IMAGE_HEIGHT,
+    position: "relative",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  priceContainer: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+  },
+  priceTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  priceText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -1189,77 +1292,9 @@ const styles = StyleSheet.create({
   columnWrapper: {
     justifyContent: "space-between",
   },
-  cardContainer: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    marginBottom: 0,
-  },
-  card: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: COLORS.shadow,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-    transform: [{ scale: 1 }],
-  },
+
   cardPressed: {
     transform: [{ scale: 0.98 }],
-  },
-  imageContainer: {
-    height: CARD_IMAGE_HEIGHT,
-    position: "relative",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    height: "100%",
-  },
-  priceContainer: {
-    position: "absolute",
-    bottom: 12,
-    left: 12,
-  },
-  priceTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  priceText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  contentContainer: {
-    flex: 1,
-    gap: 2,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.text,
-  },
-  description: {
-    fontSize: 13,
-    color: COLORS.textLight,
-    lineHeight: 28,
-  },
-  dateText: {
-    fontSize: 12,
-    color: COLORS.textLight,
   },
 
   emptyContainer: {

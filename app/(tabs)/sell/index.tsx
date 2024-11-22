@@ -61,7 +61,7 @@ export default function SellScreen() {
       setCategories(response.data.categories);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      Alert.alert("Error", "Failed to load categories");
+      Alert.alert(t("Error"), t("Failed to load categories"));
     } finally {
       setLoadingCategories(false);
     }
@@ -97,8 +97,8 @@ export default function SellScreen() {
   const pickImage = async () => {
     if (images.length >= MAX_IMAGES) {
       Alert.alert(
-        "Limit Reached",
-        `You can only upload up to ${MAX_IMAGES} images`
+        t("Limit Reached"),
+        `${t("You can only upload up to")} ${MAX_IMAGES} ${t("images")}`
       );
       return;
     }
@@ -122,15 +122,15 @@ export default function SellScreen() {
 
         if (result.assets.length > remainingSlots) {
           Alert.alert(
-            "Some images were not added",
-            `Only ${remainingSlots} image(s) were added to stay within the ${MAX_IMAGES} image limit`
+            t("Some images were not added"),
+            `${t("Only")} ${remainingSlots} ${t("images")} ${t("were added to stay within the")} ${MAX_IMAGES} ${t("image limit")}`
           );
         }
 
         setImages((prevImages) => [...prevImages, ...selectedAssets]);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to pick image");
+      Alert.alert(t("Error"), t("Failed to pick image"));
     }
   };
   const removeImage = (index: number) => {
@@ -144,12 +144,12 @@ export default function SellScreen() {
       !formData.description ||
       !formData.category
     ) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert(t("Error"), t("Please fill in all required fields"));
       return;
     }
 
     if (images.length === 0) {
-      Alert.alert("Error", "Please select at least one image");
+      Alert.alert(t("Error"), t("Please select at least one image"));
       return;
     }
 
@@ -177,7 +177,7 @@ export default function SellScreen() {
       );
 
       if (response.data.success) {
-        Alert.alert("Success", "Product listed successfully");
+        Alert.alert(t("Success"), t("Product listed successfully"));
         setFormData({
           title: "",
           price: "",
@@ -189,7 +189,7 @@ export default function SellScreen() {
       }
     } catch (error) {
       console.log("error::: ", error);
-      Alert.alert("Error", "Failed to upload product. Please try again.");
+      Alert.alert(t("Error"), t("Failed to upload product. Please try again."));
     } finally {
       setLoading(false);
     }

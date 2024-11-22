@@ -2,7 +2,7 @@
   "expo": {
     "name": "Le Vech",
     "slug": "le-vech",
-    "version": "1.0.0",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "levech",
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/splash.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -50,6 +50,18 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "2dee6be1-d1fd-4054-b812-aa085ce44235"
+      }
+    },
+    "runtimeVersion": "1.0.5",
+    "updates": {
+      "url": "https://u.expo.dev/2dee6be1-d1fd-4054-b812-aa085ce44235"
     }
   }
 }

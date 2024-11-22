@@ -51,18 +51,17 @@ const Login = () => {
   const [errors, setErrors] = useState<Errors>({});
   const dispatch = useAppDispatch();
   const router = useRouter();
-
   const validateForm = (): boolean => {
     let newErrors: Errors = {};
     if (!email) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("Email is required");
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = t("Email is invalid");
     }
     if (!password) {
-      newErrors.password = "Password is required";
+      newErrors.password = t("Password is required");
     } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+      newErrors.password = t("Password must be at least 6 characters long");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -136,7 +135,7 @@ const Login = () => {
             >
               <Ionicons name="mail-outline" size={20} color="#666" />
               <TextInput
-                placeholder="Email"
+                placeholder={t("Email")}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -160,7 +159,7 @@ const Login = () => {
             >
               <Ionicons name="lock-closed-outline" size={20} color="#666" />
               <TextInput
-                placeholder="Password"
+                placeholder={t("Password")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}

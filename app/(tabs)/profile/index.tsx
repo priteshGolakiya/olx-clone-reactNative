@@ -9,7 +9,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
@@ -20,6 +20,8 @@ import { BASE_URL } from "@/utils/apiConfig";
 import NotLoggedIn from "@/components/NotLoggedIn";
 import AddressList from "@/components/profile/Address";
 import { useTranslation } from "react-i18next";
+import LoaderContainer from "@/components/LoaderContainer";
+import { useRouter } from "expo-router";
 
 interface UserData {
   username: string;
@@ -43,6 +45,7 @@ const ProfilePage: React.FC = () => {
   const token = useAppSelector((state) => state.token.token);
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
+  const router = useRouter();
 
   const fetchUserData = async () => {
     try {
@@ -89,13 +92,11 @@ const ProfilePage: React.FC = () => {
   }
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
+    return <LoaderContainer />;
   }
-
+  const navigateToEditProfile = () => {
+    router.push("/(tabs)/profile/editProfile");
+  };
   return (
     <ScrollView
       style={styles.container}
@@ -112,8 +113,11 @@ const ProfilePage: React.FC = () => {
             style={styles.profileImage}
             resizeMode="cover"
           />
-          <TouchableOpacity style={styles.editImageButton}>
-            <Ionicons name="camera" size={20} color="#FFF" />
+          <TouchableOpacity
+            style={styles.editImageButton}
+            onPress={navigateToEditProfile}
+          >
+            <MaterialIcons name="edit" size={20} color="#FFF" />
           </TouchableOpacity>
         </View>
         <View style={styles.profileInfo}>
@@ -144,6 +148,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   header: {
     backgroundColor: "#007AFF",
     padding: 20,

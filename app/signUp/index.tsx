@@ -877,6 +877,11 @@ const SignUp = () => {
   const [imageSelected, setImageSelected] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleUploadPic = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -894,37 +899,70 @@ const SignUp = () => {
           ...prev,
           profilePic: uploadResponse.secure_url,
         }));
-        ToastAndroid.show("Image uploaded successfully", ToastAndroid.SHORT);
+        ToastAndroid.show(
+          `${t("Image uploaded successfully")}`,
+          ToastAndroid.SHORT
+        );
       }
     } catch (error) {
       console.log("error::: ", error);
-      alert("Image upload failed");
+      alert(`${t("Image upload failed")}`);
     } finally {
       setUploading(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (uploading) {
-      setError("Please wait for the image to finish uploading");
-      alert("Please wait for the image to finish uploading");
-      return;
-    }
-    if (formData.phoneNumber.length <= 9) {
-      setError("Please enter 10 number");
-      alert("Please enter 10 number");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match!");
-      alert("Passwords do not match!");
+    setError("");
+
+    if (!formData.userName.trim()) {
+      setError(t("Name is required"));
       return;
     }
 
-    // Validate phone number
-    if (!formData.phoneNumber) {
-      setError("Phone number is required!");
-      alert("Phone number is required!");
+    // Validate Email
+    if (!formData.email.trim()) {
+      setError(t("Email is required"));
+      return;
+    }
+    if (!validateEmail(formData.email)) {
+      setError(t("Please enter a valid email address"));
+      return;
+    }
+
+    // Validate Phone Number
+    if (!formData.phoneNumber.trim()) {
+      setError(t("Phone number is required"));
+      return;
+    }
+    if (formData.phoneNumber.length !== 10) {
+      setError(t("Phone number must be exactly 10 digits"));
+      return;
+    }
+
+    // Validate Password
+    if (!formData.password.trim()) {
+      setError(t("Password is required"));
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError(t("Password must be at least 6 characters long"));
+      return;
+    }
+    if (formData.password.length > 10) {
+      setError(t("Password must be maximum 10 characters long"));
+      return;
+    }
+
+    // Validate Confirm Password
+    if (formData.password !== formData.confirmPassword) {
+      setError(t("Passwords do not match"));
+      return;
+    }
+
+    // Check if image is still uploading
+    if (uploading) {
+      setError(t("Please wait for the image to finish uploading"));
       return;
     }
 
@@ -941,10 +979,9 @@ const SignUp = () => {
       setError("");
       navigation.navigate("login");
     } catch (err) {
-      const error = err as AxiosError<{ error: string }>;
-      const errorMessage = error.response?.data?.error || "An error occurred";
+      const error = err as AxiosError<{ message: string }>;
+      const errorMessage = error.response?.data?.message || "An error occurred";
       setError(errorMessage);
-      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -978,7 +1015,7 @@ const SignUp = () => {
             <Text style={styles.label}>{t("Name")}:</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your name"
+              placeholder={t("Enter your name")}
               value={formData.userName}
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, userName: text }))
@@ -991,7 +1028,7 @@ const SignUp = () => {
             <Text style={styles.label}>{t("Email")}:</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your email"
+              placeholder={t("Enter your email")}
               value={formData.email}
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, email: text }))
@@ -1006,7 +1043,7 @@ const SignUp = () => {
             <Text style={styles.label}>{t("Phone Number")}:</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your phone number"
+              placeholder={t("Enter your phone number")}
               value={formData.phoneNumber}
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, phoneNumber: text }))
@@ -1020,7 +1057,7 @@ const SignUp = () => {
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Enter your password"
+                placeholder={t("Enter your password")}
                 value={formData.password}
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, password: text }))
@@ -1045,7 +1082,7 @@ const SignUp = () => {
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Confirm your password"
+                placeholder={t("Confirm your password")}
                 value={formData.confirmPassword}
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, confirmPassword: text }))

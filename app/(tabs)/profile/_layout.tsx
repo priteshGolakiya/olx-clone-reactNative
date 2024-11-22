@@ -48,7 +48,7 @@
 // export default FavoritesLayout;
 
 import { View } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { Stack, useRouter } from "expo-router";
 import { defaultStyles } from "@/styles";
 import {
@@ -59,6 +59,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppSelector } from "@/store/hooks";
 import { Drawer } from "expo-router/drawer";
 import { useTranslation } from "react-i18next";
+import { useIsFocused } from "@react-navigation/native";
 
 const ProfileLayout = () => {
   const router = useRouter();
@@ -66,6 +67,14 @@ const ProfileLayout = () => {
   const isAdmin = user.role === "admin";
   const { t } = useTranslation();
   // Add a console log to see what's being translated
+
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused) {
+      router.push("/(tabs)/profile");
+    }
+  }, [isFocused]);
   if (isAdmin) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -111,7 +120,7 @@ const ProfileLayout = () => {
         <Stack.Screen
           name="index"
           options={{
-            title: t("Profile"),
+            title: t("profile"),
           }}
         />
         <Stack.Screen
@@ -131,6 +140,19 @@ const ProfileLayout = () => {
           options={{
             presentation: "modal",
             title: t("Add Address"),
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()}>
+                <Ionicons name="close-outline" size={28} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="editProfile"
+          options={{
+            presentation: "modal",
+            title: t("Edit Profile"),
+            headerShown: false,
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.back()}>
                 <Ionicons name="close-outline" size={28} />
