@@ -292,7 +292,7 @@ import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
-const OPENCAGE_API_KEY = "da3020cad2cc4ee79e7d4669235ca88f";
+const OPENCAGE_API_KEY = process.env.EXPO_PUBLIC_OPENCAGE_API_KEY;
 
 interface AddressFormData {
   street: string;
